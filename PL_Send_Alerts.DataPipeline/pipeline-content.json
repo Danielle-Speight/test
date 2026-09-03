@@ -1,0 +1,312 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "name": "GetErrorLogs",
+        "type": "TridentNotebook",
+        "dependsOn": [
+          {
+            "activity": "Data Pipeline Failures",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          },
+          {
+            "activity": "Data Quality Notifications",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "notebookId": {
+            "value": "@pipeline().libraryVariables.notebook_id_extract_error_logs_in_html",
+            "type": "Expression"
+          },
+          "workspaceId": {
+            "value": "@pipeline().libraryVariables.spark_compute_workspace_id",
+            "type": "Expression"
+          },
+          "parameters": {
+            "data_movement_failures": {
+              "value": {
+                "value": "@string(activity('Data Pipeline Failures').output.value)",
+                "type": "Expression"
+              },
+              "type": "string"
+            },
+            "data_quality_notifications": {
+              "value": {
+                "value": "@string(activity('Data Quality Notifications').output.value)",
+                "type": "Expression"
+              },
+              "type": "string"
+            }
+          }
+        }
+      },
+      {
+        "name": "Pipeline Errors Table",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "GetErrorLogs",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "variableName": "pipeline_errors_html_table",
+          "value": {
+            "value": "@json(activity('GetErrorLogs').output.result.exitValue).data_movement_failures_html_template",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "Data Quality Table",
+        "type": "SetVariable",
+        "dependsOn": [
+          {
+            "activity": "GetErrorLogs",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "policy": {
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "variableName": "data_quality_html_table",
+          "value": {
+            "value": "@json(activity('GetErrorLogs').output.result.exitValue).data_quality_notifications_html_template",
+            "type": "Expression"
+          }
+        }
+      },
+      {
+        "name": "If Data Quality Notifications",
+        "type": "IfCondition",
+        "dependsOn": [
+          {
+            "activity": "Data Quality Table",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "typeProperties": {
+          "expression": {
+            "value": "@not(equals(variables('data_quality_html_table'),''))",
+            "type": "Expression"
+          },
+          "ifFalseActivities": [],
+          "ifTrueActivities": [
+            {
+              "name": "Data Quality",
+              "type": "Office365Outlook",
+              "dependsOn": [],
+              "typeProperties": {
+                "inputs": {
+                  "method": "post",
+                  "path": "/v2/Mail",
+                  "body": {
+                    "To": "hschwarz@microsoft.com",
+                    "Subject": "Data Quality Notifications",
+                    "Body": "<p>@{variables('data_quality_html_table')}</p>",
+                    "Sensitivity": "",
+                    "Importance": "High"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "If Pipeline Errors",
+        "type": "IfCondition",
+        "dependsOn": [
+          {
+            "activity": "Pipeline Errors Table",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ],
+        "typeProperties": {
+          "expression": {
+            "value": "@not(equals(variables('pipeline_errors_html_table'),''))",
+            "type": "Expression"
+          },
+          "ifFalseActivities": [],
+          "ifTrueActivities": [
+            {
+              "name": "Pipeline Errors",
+              "type": "Office365Outlook",
+              "dependsOn": [],
+              "typeProperties": {
+                "inputs": {
+                  "method": "post",
+                  "path": "/v2/Mail",
+                  "body": {
+                    "To": "hschwarz@microsoft.com",
+                    "Subject": "Data Pipeline Failures",
+                    "Body": "<p>@{variables('pipeline_errors_html_table')}</p>",
+                    "Importance": "High",
+                    "Sensitivity": ""
+                  }
+                }
+              }
+            }
+          ]
+        }
+      },
+      {
+        "name": "Data Pipeline Failures",
+        "type": "Lookup",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderQuery": {
+              "value": "SELECT       [Trigger_Name]\n            , [Trigger_Execution_Start_Time] [Trigger_Start_Time]\n            , [Trigger_Step]\n            , [Ingestion_End_Time]\n            , [Table_ID]\n            , Concat([Target_Datastore], '.', [Target_Entity]) [Data_Target_Details]\n            , [Fabric_Monitor_URL] \nFROM        [dbo].[Data_Pipeline_Logs] \nWHERE       [Ingestion_Status] = 'Failed' \nAND         CAST(Ingestion_End_Time as DATE) = '@{formatDateTime(utcnow(), 'yyyy-MM-dd')}'\nORDER BY    [Trigger_Name], [Trigger_Execution_ID], [Trigger_Step], [Ingestion_End_Time]",
+              "type": "Expression"
+            },
+            "queryTimeout": "02:00:00",
+            "partitionOption": "None"
+          },
+          "firstRowOnly": false,
+          "datasetSettings": {
+            "annotations": [],
+            "linkedService": {
+              "name": "6e2c2b8e_8964_4e36_a51b_8a8cf382b2d3",
+              "properties": {
+                "annotations": [],
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "endpoint": "@pipeline().libraryVariables.metadata_warehouse_endpoint",
+                  "artifactId": "@pipeline().libraryVariables.metadata_warehouse_id",
+                  "workspaceId": "@pipeline().libraryVariables.metadata_workspace_id"
+                }
+              }
+            },
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "typeProperties": {}
+          }
+        }
+      },
+      {
+        "name": "Data Quality Notifications",
+        "type": "Lookup",
+        "dependsOn": [],
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureOutput": false,
+          "secureInput": false
+        },
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderQuery": {
+              "value": "SELECT\t\t[Datastore_Name] [Datastore]\n            , [Table_Name] [Table]\n            , [Data_Quality_Category] [Category]\n            , [Data_Quality_Message] [Message]\n            , [Data_Quarantined] [Data Quarantined?]\n            , [Ingestion_End_Time] [Timestamp]\n            , [Fabric_Monitor_URL] \nFROM\t\t [dbo].[Data_Quality_Notifications] \nWHERE\t\tData_Quality_Result != 'Pass'\nAND         CAST(Ingestion_End_Time as DATE) = '@{formatDateTime(utcnow(), 'yyyy-MM-dd')}'\nORDER BY\t[Ingestion_End_Time]",
+              "type": "Expression"
+            },
+            "queryTimeout": "02:00:00",
+            "partitionOption": "None"
+          },
+          "firstRowOnly": false,
+          "datasetSettings": {
+            "annotations": [],
+            "linkedService": {
+              "name": "df317c94_ce22_424e_9485_b07d0a2cd7a1",
+              "properties": {
+                "annotations": [],
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "endpoint": "@pipeline().libraryVariables.metadata_warehouse_endpoint",
+                  "artifactId": "@pipeline().libraryVariables.metadata_warehouse_id",
+                  "workspaceId": "@pipeline().libraryVariables.metadata_workspace_id"
+                }
+              }
+            },
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "typeProperties": {}
+          }
+        }
+      }
+    ],
+    "variables": {
+      "pipeline_errors_html_table": {
+        "type": "String"
+      },
+      "data_quality_html_table": {
+        "type": "String"
+      },
+      "workspace_variables": {
+        "type": "String"
+      }
+    },
+    "libraryVariables": {
+      "spark_compute_workspace_id": {
+        "type": "String",
+        "variableName": "spark_compute_workspace_id",
+        "libraryName": "VL_Workspace_Variables"
+      },
+      "metadata_warehouse_id": {
+        "type": "String",
+        "variableName": "metadata_warehouse_id",
+        "libraryName": "VL_Workspace_Variables"
+      },
+      "metadata_warehouse_endpoint": {
+        "type": "String",
+        "variableName": "metadata_warehouse_endpoint",
+        "libraryName": "VL_Workspace_Variables"
+      },
+      "metadata_workspace_id": {
+        "type": "String",
+        "variableName": "metadata_workspace_id",
+        "libraryName": "VL_Workspace_Variables"
+      },
+      "notebook_id_extract_error_logs_in_html": {
+        "type": "String",
+        "variableName": "notebook_id_extract_error_logs_in_html",
+        "libraryName": "VL_Workspace_Variables"
+      }
+    },
+    "logicAppsConnectionPayload": {
+      "id": "/subscriptions/17517d41-13e4-4814-9288-17776bb63cf0/resourceGroups/connections-ac6fdc87-ceee-40c4-bc75-8d80fccab569/providers/Microsoft.Web/connections/1_982daafa-3fa9-4105-8a61-826d04644a2c_b6ed0be2-e2e6-4fd6-b845-fef292f98e68",
+      "properties": {
+        "api": {
+          "name": "office365",
+          "id": "/subscriptions/17517d41-13e4-4814-9288-17776bb63cf0/providers/Microsoft.Web/locations/eastus/managedApis/office365"
+        }
+      }
+    }
+  }
+}

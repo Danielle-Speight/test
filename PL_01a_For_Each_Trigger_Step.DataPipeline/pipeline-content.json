@@ -1,0 +1,650 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "isSequential": true,
+          "items": {
+            "value": "@activity('Get Metadata Details for Trigger').output.value",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "IfCondition",
+              "typeProperties": {
+                "expression": {
+                  "value": "@equals(variables('an_activity_failed'),'Yes')",
+                  "type": "Expression"
+                },
+                "ifTrueActivities": [],
+                "ifFalseActivities": [
+                  {
+                    "type": "SetVariable",
+                    "typeProperties": {
+                      "variableName": "an_activity_failed",
+                      "value": "Yes"
+                    },
+                    "policy": {
+                      "secureInput": false,
+                      "secureOutput": false
+                    },
+                    "name": "An Activity Failed",
+                    "dependsOn": [
+                      {
+                        "activity": "Execute Each Table ID in Step",
+                        "dependencyConditions": [
+                          "Failed"
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "ExecutePipeline",
+                    "typeProperties": {
+                      "pipeline": {
+                        "referenceName": "466dbc82-1a21-8b22-4a57-b14199c69860",
+                        "type": "PipelineReference"
+                      },
+                      "parameters": {
+                        "trigger_name": {
+                          "value": "@item().Trigger_Name",
+                          "type": "Expression"
+                        },
+                        "order_of_operations": {
+                          "value": "@item().Order_Of_Operations",
+                          "type": "Expression"
+                        },
+                        "pipeline_table_details": {
+                          "value": "@item().Pipeline_Table_Details",
+                          "type": "Expression"
+                        },
+                        "trigger_execution_id": {
+                          "value": "@pipeline().TriggerId",
+                          "type": "Expression"
+                        },
+                        "trigger_execution_time": {
+                          "value": "@pipeline().TriggerTime",
+                          "type": "Expression"
+                        },
+                        "event_payload": {
+                          "value": "@pipeline().parameters.event_payload",
+                          "type": "Expression"
+                        },
+                        "folder_path_from_trigger": {
+                          "value": "@pipeline().parameters.folder_path_from_trigger",
+                          "type": "Expression"
+                        },
+                        "metadata_workspace_config": {
+                          "value": "@json(concat('{ \n    \"metadata_warehouse_id\" : \"', pipeline().libraryVariables.metadata_warehouse_id, '\"'\n    ,',\"metadata_warehouse_endpoint\" : \"', pipeline().libraryVariables.metadata_warehouse_endpoint, '\"'\n    ,',\"metadata_workspace_id\" : \"', pipeline().libraryVariables.metadata_workspace_id, '\"'\n,'}'))",
+                          "type": "Expression"
+                        },
+                        "logging_workspace_config": {
+                          "value": "@json(concat('{ \n    \"logging_warehouse_id\" : \"', pipeline().libraryVariables.logging_warehouse_id, '\"'\n    ,',\"logging_warehouse_endpoint\" : \"', pipeline().libraryVariables.logging_warehouse_endpoint, '\"'\n    ,',\"logging_workspace_id\" : \"', pipeline().libraryVariables.logging_workspace_id, '\"'\n,'}'))",
+                          "type": "Expression"
+                        }
+                      },
+                      "waitOnCompletion": true
+                    },
+                    "policy": {
+                      "secureInput": false
+                    },
+                    "name": "Execute Each Table ID in Step",
+                    "dependsOn": []
+                  },
+                  {
+                    "type": "Fail",
+                    "typeProperties": {
+                      "message": "Pipeline Failed",
+                      "errorCode": "100"
+                    },
+                    "name": "Failure Happened",
+                    "dependsOn": [
+                      {
+                        "activity": "An Activity Failed",
+                        "dependencyConditions": [
+                          "Succeeded"
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              },
+              "name": "If Failure",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "For Each Step Within Trigger",
+        "dependsOn": [
+          {
+            "activity": "Get Metadata Details for Trigger",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Lookup",
+        "typeProperties": {
+          "source": {
+            "type": "DataWarehouseSource",
+            "sqlReaderStoredProcedureName": {
+              "value": "[dbo].[Get_Pipeline_Tables]",
+              "type": "Expression"
+            },
+            "storedProcedureParameters": {
+              "trigger_name": {
+                "type": "String",
+                "value": {
+                  "value": "@pipeline().parameters.trigger_name",
+                  "type": "Expression"
+                }
+              },
+              "start_with_step": {
+                "type": "String",
+                "value": {
+                  "value": "@pipeline().parameters.start_with_step",
+                  "type": "Expression"
+                }
+              },
+              "table_ids": {
+                "type": "String",
+                "value": {
+                  "value": "@pipeline().parameters.table_ids",
+                  "type": "Expression"
+                }
+              }
+            },
+            "partitionOption": "None",
+            "queryTimeout": "02:00:00"
+          },
+          "datasetSettings": {
+            "type": "DataWarehouseTable",
+            "schema": [],
+            "linkedService": {
+              "name": "ff3816f5_67b3_479e_ae9a_45fdbbeb2c96",
+              "properties": {
+                "type": "DataWarehouse",
+                "typeProperties": {
+                  "artifactId": "@pipeline().libraryVariables.metadata_warehouse_id",
+                  "endpoint": "@pipeline().libraryVariables.metadata_warehouse_endpoint",
+                  "workspaceId": "@pipeline().libraryVariables.metadata_workspace_id"
+                },
+                "annotations": []
+              }
+            },
+            "annotations": []
+          },
+          "firstRowOnly": false
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 0,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Get Metadata Details for Trigger",
+        "description": "",
+        "dependsOn": []
+      },
+      {
+        "type": "SqlServerStoredProcedure",
+        "typeProperties": {
+          "storedProcedureName": {
+            "value": "[dbo].[Log_Data_Movement]",
+            "type": "Expression"
+          },
+          "storedProcedureParameters": {
+            "event_end_time": {
+              "value": {
+                "value": "@utcnow()",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "log_id": {
+              "value": {
+                "value": "@guid()",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "status": {
+              "value": "Failed",
+              "type": "String"
+            },
+            "table_id": {
+              "value": "-1",
+              "type": "Int32"
+            },
+            "fabric_monitor_url": {
+              "value": {
+                "value": "https://app.fabric.microsoft.com/workloads/data-pipeline/monitoring/workspaces/@{pipeline().DataFactory}/pipelines/@{pipeline().Pipeline}/@{pipeline().RunId}?experience=data-factory",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "trigger_id": {
+              "value": {
+                "value": "@pipeline().TriggerId",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "trigger_time": {
+              "value": {
+                "value": "@pipeline().TriggerTime",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "trigger_name": {
+              "value": {
+                "value": "@pipeline().parameters.trigger_name",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "event_start_time": {
+              "value": {
+                "value": "@pipeline().TriggerTime",
+                "type": "Expression"
+              },
+              "type": "String"
+            }
+          }
+        },
+        "linkedService": {
+          "name": "7b2243e0_2425_403c_884d_240e7a3a568e",
+          "properties": {
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "artifactId": "@pipeline().libraryVariables.logging_warehouse_id",
+              "endpoint": "@pipeline().libraryVariables.logging_warehouse_endpoint",
+              "workspaceId": "@pipeline().libraryVariables.logging_workspace_id"
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Add Logging Record if Failure3",
+        "dependsOn": [
+          {
+            "activity": "If Running Exploratory Analysis",
+            "dependencyConditions": [
+              "Failed"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Fail",
+        "typeProperties": {
+          "message": {
+            "value": "Pipeline Failed During For Each Loop",
+            "type": "Expression"
+          },
+          "errorCode": "100"
+        },
+        "name": "Pipeline Failed3",
+        "dependsOn": [
+          {
+            "activity": "Add Logging Record if Failure3",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SqlServerStoredProcedure",
+        "typeProperties": {
+          "storedProcedureName": {
+            "value": "[dbo].[Log_Data_Movement]",
+            "type": "Expression"
+          },
+          "storedProcedureParameters": {
+            "event_end_time": {
+              "value": {
+                "value": "@utcnow()",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "log_id": {
+              "value": {
+                "value": "@guid()",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "status": {
+              "value": "Failed",
+              "type": "String"
+            },
+            "table_id": {
+              "value": "-1",
+              "type": "Int32"
+            },
+            "fabric_monitor_url": {
+              "value": {
+                "value": "https://app.fabric.microsoft.com/workloads/data-pipeline/monitoring/workspaces/@{pipeline().DataFactory}/pipelines/@{pipeline().Pipeline}/@{pipeline().RunId}?experience=data-factory",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "trigger_id": {
+              "value": {
+                "value": "@pipeline().TriggerId",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "trigger_time": {
+              "value": {
+                "value": "@pipeline().TriggerTime",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "trigger_name": {
+              "value": {
+                "value": "@pipeline().parameters.trigger_name",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "event_start_time": {
+              "value": {
+                "value": "@pipeline().TriggerTime",
+                "type": "Expression"
+              },
+              "type": "String"
+            }
+          }
+        },
+        "linkedService": {
+          "name": "7b2243e0_2425_403c_884d_240e7a3a568e",
+          "properties": {
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "artifactId": "@pipeline().libraryVariables.logging_warehouse_id",
+              "endpoint": "@pipeline().libraryVariables.logging_warehouse_endpoint",
+              "workspaceId": "@pipeline().libraryVariables.logging_workspace_id"
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Add Logging Record if Failure",
+        "dependsOn": [
+          {
+            "activity": "Get Metadata Details for Trigger",
+            "dependencyConditions": [
+              "Failed"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Fail",
+        "typeProperties": {
+          "message": {
+            "value": "Pipeline Failed During For Each Loop",
+            "type": "Expression"
+          },
+          "errorCode": "100"
+        },
+        "name": "Pipeline Failed",
+        "dependsOn": [
+          {
+            "activity": "Add Logging Record if Failure",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "SqlServerStoredProcedure",
+        "typeProperties": {
+          "storedProcedureName": {
+            "value": "[dbo].[Log_Data_Movement]",
+            "type": "Expression"
+          },
+          "storedProcedureParameters": {
+            "event_end_time": {
+              "value": {
+                "value": "@utcnow()",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "log_id": {
+              "value": {
+                "value": "@guid()",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "status": {
+              "value": "Failed",
+              "type": "String"
+            },
+            "table_id": {
+              "value": "-1",
+              "type": "Int32"
+            },
+            "fabric_monitor_url": {
+              "value": {
+                "value": "https://app.fabric.microsoft.com/workloads/data-pipeline/monitoring/workspaces/@{pipeline().DataFactory}/pipelines/@{pipeline().Pipeline}/@{pipeline().RunId}?experience=data-factory",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "trigger_id": {
+              "value": {
+                "value": "@pipeline().TriggerId",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "trigger_time": {
+              "value": {
+                "value": "@pipeline().TriggerTime",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "trigger_name": {
+              "value": {
+                "value": "@pipeline().parameters.trigger_name",
+                "type": "Expression"
+              },
+              "type": "String"
+            },
+            "event_start_time": {
+              "value": {
+                "value": "@pipeline().TriggerTime",
+                "type": "Expression"
+              },
+              "type": "String"
+            }
+          }
+        },
+        "linkedService": {
+          "name": "7b2243e0_2425_403c_884d_240e7a3a568e",
+          "properties": {
+            "type": "DataWarehouse",
+            "typeProperties": {
+              "artifactId": "@pipeline().libraryVariables.logging_warehouse_id",
+              "endpoint": "@pipeline().libraryVariables.logging_warehouse_endpoint",
+              "workspaceId": "@pipeline().libraryVariables.logging_workspace_id"
+            },
+            "annotations": []
+          }
+        },
+        "policy": {
+          "timeout": "0.12:00:00",
+          "retry": 2,
+          "retryIntervalInSeconds": 30,
+          "secureInput": false,
+          "secureOutput": false
+        },
+        "name": "Add Logging Record if Failure2",
+        "dependsOn": [
+          {
+            "activity": "For Each Step Within Trigger",
+            "dependencyConditions": [
+              "Failed"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "Fail",
+        "typeProperties": {
+          "message": {
+            "value": "Pipeline Failed During For Each Loop",
+            "type": "Expression"
+          },
+          "errorCode": "100"
+        },
+        "name": "Pipeline Failed2",
+        "dependsOn": [
+          {
+            "activity": "Add Logging Record if Failure2",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      },
+      {
+        "type": "IfCondition",
+        "typeProperties": {
+          "expression": {
+            "value": "@pipeline().parameters.run_exploratory_analysis",
+            "type": "Expression"
+          },
+          "ifTrueActivities": [
+            {
+              "type": "ExecutePipeline",
+              "typeProperties": {
+                "pipeline": {
+                  "referenceName": "52ff2067-2937-8bc7-4987-2458dcb90751",
+                  "type": "PipelineReference"
+                },
+                "parameters": {
+                  "trigger_name": {
+                    "value": "@pipeline().parameters.trigger_name",
+                    "type": "Expression"
+                  }
+                },
+                "waitOnCompletion": true
+              },
+              "policy": {
+                "secureInput": false
+              },
+              "name": "Run Exploratory Table Analysis",
+              "dependsOn": []
+            }
+          ],
+          "ifFalseActivities": []
+        },
+        "name": "If Running Exploratory Analysis",
+        "dependsOn": [
+          {
+            "activity": "For Each Step Within Trigger",
+            "dependencyConditions": [
+              "Succeeded"
+            ]
+          }
+        ]
+      }
+    ],
+    "parameters": {
+      "trigger_name": {
+        "type": "string",
+        "defaultValue": "CDM_LMS_Blackboard_Ingestion"
+      },
+      "start_with_step": {
+        "type": "string",
+        "defaultValue": "0"
+      },
+      "table_ids": {
+        "type": "string",
+        "defaultValue": "0"
+      },
+      "event_payload": {
+        "type": "string"
+      },
+      "folder_path_from_trigger": {
+        "type": "string"
+      },
+      "run_exploratory_analysis": {
+        "type": "bool",
+        "defaultValue": true
+      }
+    },
+    "libraryVariables": {
+      "metadata_warehouse_id": {
+        "type": "String",
+        "variableName": "metadata_warehouse_id",
+        "libraryName": "VL_Workspace_Variables"
+      },
+      "metadata_warehouse_endpoint": {
+        "type": "String",
+        "variableName": "metadata_warehouse_endpoint",
+        "libraryName": "VL_Workspace_Variables"
+      },
+      "metadata_workspace_id": {
+        "type": "String",
+        "variableName": "metadata_workspace_id",
+        "libraryName": "VL_Workspace_Variables"
+      },
+      "logging_workspace_id": {
+        "type": "String",
+        "variableName": "logging_workspace_id",
+        "libraryName": "VL_Workspace_Variables"
+      },
+      "logging_warehouse_endpoint": {
+        "type": "String",
+        "variableName": "logging_warehouse_endpoint",
+        "libraryName": "VL_Workspace_Variables"
+      },
+      "logging_warehouse_id": {
+        "type": "String",
+        "variableName": "logging_warehouse_id",
+        "libraryName": "VL_Workspace_Variables"
+      }
+    },
+    "variables": {
+      "an_activity_failed": {
+        "type": "String",
+        "defaultValue": "No"
+      },
+      "metadata_workspace_config": {
+        "type": "String"
+      },
+      "logging_workspace_config": {
+        "type": "String"
+      }
+    }
+  }
+}

@@ -1,0 +1,25 @@
+CREATE TABLE [dbo].[Data_Pipeline_Logs] (
+
+	[Log_ID] varchar(4000) NULL, 
+	[Table_ID] int NULL, 
+	[Source_Medallion_Layer] varchar(50) NULL, 
+	[Source_Type] varchar(100) NULL, 
+	[Data_Source_Details] varchar(4000) NULL, 
+	[Target_Medallion_Layer] varchar(50) NULL, 
+	[Target_Type] varchar(100) NULL, 
+	[Target_Datastore] varchar(255) NULL, 
+	[Target_Entity] varchar(4000) NULL, 
+	[Ingestion_Start_Time] datetime2(6) NULL, 
+	[Ingestion_End_Time] datetime2(6) NULL, 
+	[Ingestion_Status] varchar(4000) NULL, 
+	[Processing_Phase] varchar(50) NULL, 
+	[Watermark_Value] varchar(4000) NULL, 
+	[Records_Processed] int NULL, 
+	[Quarantined_Records] int NULL, 
+	[Fabric_Monitor_URL] varchar(4000) NULL, 
+	[Trigger_Name] varchar(500) NULL, 
+	[Trigger_Step] int NULL, 
+	[Trigger_Execution_ID] varchar(500) NULL, 
+	[Trigger_Execution_Start_Time] datetime2(6) NULL, 
+	[Date_Key] int NULL
+);

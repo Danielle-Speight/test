@@ -1,0 +1,83 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/variableLibrary/definition/variables/1.0.0/schema.json",
+  "variables": [
+    {
+      "name": "metadata_workspace_id",
+      "note": "",
+      "type": "String",
+      "value": "0f45f4f1-888e-4db4-9132-46179563e4e4"
+    },
+    {
+      "name": "metadata_warehouse_id",
+      "note": "",
+      "type": "String",
+      "value": "2a8bb212-62c2-4bbb-a434-7c50473c5949"
+    },
+    {
+      "name": "metadata_warehouse_endpoint",
+      "note": "",
+      "type": "String",
+      "value": "gbf3pplisvlerpn7az2zo6h4xq-6h2ekd4orc2e3ejsiylzky7e4q.datawarehouse.fabric.microsoft.com"
+    },
+    {
+      "name": "logging_workspace_id",
+      "note": "",
+      "type": "String",
+      "value": "0f45f4f1-888e-4db4-9132-46179563e4e4"
+    },
+    {
+      "name": "logging_warehouse_id",
+      "note": "",
+      "type": "String",
+      "value": "2a8bb212-62c2-4bbb-a434-7c50473c5949"
+    },
+    {
+      "name": "logging_warehouse_endpoint",
+      "note": "",
+      "type": "String",
+      "value": "gbf3pplisvlerpn7az2zo6h4xq-6h2ekd4orc2e3ejsiylzky7e4q.datawarehouse.fabric.microsoft.com"
+    },
+    {
+      "name": "metadata_lakehouse_id",
+      "note": "",
+      "type": "String",
+      "value": "23e58db4-bc94-4fea-ac48-0686234ae11d"
+    },
+    {
+      "name": "metadata_lakehouse_name",
+      "note": "",
+      "type": "String",
+      "value": "metadata_lakehouse"
+    },
+    {
+      "name": "spark_compute_workspace_id",
+      "note": "",
+      "type": "String",
+      "value": "0f45f4f1-888e-4db4-9132-46179563e4e4"
+    },
+    {
+      "name": "notebook_id_batch_processing",
+      "note": "",
+      "type": "String",
+      "value": "76798a27-933e-4113-acfd-ffe52a082a63"
+    },
+    {
+      "name": "notebook_id_exploratory_data_analysis",
+      "note": "",
+      "type": "String",
+      "value": "1b1cc777-ce1a-4675-95d7-858c0737fdc2"
+    },
+    {
+      "name": "notebook_id_extract_error_logs_in_html",
+      "note": "",
+      "type": "String",
+      "value": "ebe36cc5-c5dd-488a-874e-d312ea2a98dc"
+    },
+    {
+      "name": "default_spark_environment_id",
+      "note": "",
+      "type": "String",
+      "value": "44f0bd20-9492-4909-acdc-ade7e7275427"
+    }
+  ]
+}

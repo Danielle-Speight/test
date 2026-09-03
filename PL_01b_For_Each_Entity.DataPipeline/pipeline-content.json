@@ -1,0 +1,192 @@
+{
+  "properties": {
+    "activities": [
+      {
+        "type": "ForEach",
+        "typeProperties": {
+          "batchCount": 50,
+          "items": {
+            "value": "@json(concat('[', pipeline().parameters.pipeline_table_details, ']'))",
+            "type": "Expression"
+          },
+          "activities": [
+            {
+              "type": "IfCondition",
+              "typeProperties": {
+                "expression": {
+                  "value": "@equals(split(item(), ':')[1], 'batch_with_staging')",
+                  "type": "Expression"
+                },
+                "ifTrueActivities": [
+                  {
+                    "type": "ExecutePipeline",
+                    "typeProperties": {
+                      "pipeline": {
+                        "referenceName": "8b4e3826-6fbd-8f51-422d-5f719ac0178f",
+                        "type": "PipelineReference"
+                      },
+                      "parameters": {
+                        "start_time": {
+                          "value": "@utcNow()",
+                          "type": "Expression"
+                        },
+                        "trigger_execution_id": {
+                          "value": "@pipeline().parameters.trigger_execution_id",
+                          "type": "Expression"
+                        },
+                        "trigger_execution_time": {
+                          "value": "@pipeline().parameters.trigger_execution_time",
+                          "type": "Expression"
+                        },
+                        "table_id": {
+                          "value": "@split(item(), ':')[0]",
+                          "type": "Expression"
+                        },
+                        "trigger_name": {
+                          "value": "@pipeline().parameters.trigger_name",
+                          "type": "Expression"
+                        },
+                        "target_datastore": {
+                          "value": "@split(item(), ':')[2]",
+                          "type": "Expression"
+                        },
+                        "target_entity": {
+                          "value": "@split(item(), ':')[3]",
+                          "type": "Expression"
+                        },
+                        "metadata_workspace_config": {
+                          "value": "@pipeline().parameters.metadata_workspace_config",
+                          "type": "Expression"
+                        },
+                        "logging_workspace_config": {
+                          "value": "@pipeline().parameters.logging_workspace_config",
+                          "type": "Expression"
+                        },
+                        "source_datastore_name": {
+                          "value": "@split(item(), ':')[4]",
+                          "type": "Expression"
+                        }
+                      },
+                      "waitOnCompletion": true
+                    },
+                    "policy": {
+                      "secureInput": false
+                    },
+                    "name": "Call Write to Raw Pipeline",
+                    "dependsOn": []
+                  }
+                ],
+                "ifFalseActivities": [
+                  {
+                    "type": "ExecutePipeline",
+                    "typeProperties": {
+                      "pipeline": {
+                        "referenceName": "07f45e67-3a39-91cc-49df-bce2d8dfc9cf",
+                        "type": "PipelineReference"
+                      },
+                      "parameters": {
+                        "start_time": {
+                          "value": "@utcNow()",
+                          "type": "Expression"
+                        },
+                        "trigger_execution_id": {
+                          "value": "@pipeline().parameters.trigger_execution_id",
+                          "type": "Expression"
+                        },
+                        "trigger_execution_time": {
+                          "value": "@pipeline().parameters.trigger_execution_time",
+                          "type": "Expression"
+                        },
+                        "event_payload": {
+                          "value": "@pipeline().parameters.event_payload",
+                          "type": "Expression"
+                        },
+                        "folder_path_from_trigger": {
+                          "value": "@pipeline().parameters.folder_path_from_trigger",
+                          "type": "Expression"
+                        },
+                        "primary_config": "{}",
+                        "processing_method": {
+                          "value": "@split(item(), ':')[1]",
+                          "type": "Expression"
+                        },
+                        "table_id": {
+                          "value": "@split(item(), ':')[0]",
+                          "type": "Expression"
+                        },
+                        "trigger_name": {
+                          "value": "@pipeline().parameters.trigger_name",
+                          "type": "Expression"
+                        },
+                        "target_datastore": {
+                          "value": "@split(item(), ':')[2]",
+                          "type": "Expression"
+                        },
+                        "trigger_step": {
+                          "value": "@pipeline().parameters.order_of_operations",
+                          "type": "Expression"
+                        },
+                        "target_entity": {
+                          "value": "@split(item(), ':')[3]",
+                          "type": "Expression"
+                        },
+                        "metadata_workspace_config": {
+                          "value": "@pipeline().parameters.metadata_workspace_config",
+                          "type": "Expression"
+                        },
+                        "logging_workspace_config": {
+                          "value": "@pipeline().parameters.logging_workspace_config",
+                          "type": "Expression"
+                        },
+                        "table_ddl": "[]"
+                      },
+                      "waitOnCompletion": true
+                    },
+                    "policy": {
+                      "secureInput": false
+                    },
+                    "name": "Call Write to Table Pipeline",
+                    "dependsOn": []
+                  }
+                ]
+              },
+              "name": "If Data Staging Required",
+              "dependsOn": []
+            }
+          ]
+        },
+        "name": "For Each Entity",
+        "dependsOn": []
+      }
+    ],
+    "parameters": {
+      "trigger_name": {
+        "type": "string"
+      },
+      "order_of_operations": {
+        "type": "int"
+      },
+      "pipeline_table_details": {
+        "type": "string"
+      },
+      "trigger_execution_id": {
+        "type": "string"
+      },
+      "trigger_execution_time": {
+        "type": "string"
+      },
+      "event_payload": {
+        "type": "string"
+      },
+      "folder_path_from_trigger": {
+        "type": "string"
+      },
+      "metadata_workspace_config": {
+        "type": "object"
+      },
+      "logging_workspace_config": {
+        "type": "object"
+      }
+    }
+  }
+}

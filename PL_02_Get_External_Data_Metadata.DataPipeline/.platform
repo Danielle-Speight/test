@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "PL_02_Get_External_Data_Metadata"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "fdaaef92-18b1-a9e6-4c89-32757d080e00"
+  }
+}

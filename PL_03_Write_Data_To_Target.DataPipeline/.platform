@@ -1,0 +1,11 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/gitIntegration/platformProperties/2.0.0/schema.json",
+  "metadata": {
+    "type": "DataPipeline",
+    "displayName": "PL_03_Write_Data_To_Target"
+  },
+  "config": {
+    "version": "2.0",
+    "logicalId": "07f45e67-3a39-91cc-49df-bce2d8dfc9cf"
+  }
+}
